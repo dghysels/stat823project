@@ -1,0 +1,76 @@
+---
+title: "pcancer distribution"
+author: "Don Ghysels"
+date: "2/21/2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+```{r message=FALSE}
+library('readxl')
+library("rpart")
+
+pcancerdf <- read_excel("../pcancer.xlsx")
+
+```
+
+
+```{r}
+pcancer.cor <- cor(pcancerdf[,2:9])
+```
+
+
+```{r}
+pcancerdf.psa.reduced <- pcancerdf[pcancerdf$psa < 200,]
+pcancer.cor.psa <- cor(pcancerdf.psa.reduced[,2:9])
+cordf <- data.frame(pcancer.cor[1,],pcancer.cor.psa[1,],pcancer.cor.psa[1,] - pcancer.cor[1,])
+colnames(cordf) <-  c("cor","reduced cor", "improvement")
+knitr::kable(cordf)
+hist(pcancerdf$psa, breaks = seq(0,300, 2))
+
+
+```
+
+```{r}
+pcancerdf.cv.reduced <- pcancerdf[pcancerdf$cancerv < 30,]
+pcancer.cor.cv <- cor(pcancerdf.cv.reduced[,2:9])
+cordf <- data.frame(pcancer.cor[2,],pcancer.cor.cv[2,],pcancer.cor.cv[2,] - pcancer.cor[2,])
+colnames(cordf) <-  c("cor","reduced cor", "improvement")
+knitr::kable(cordf)
+hist(pcancerdf$cancerv, breaks = seq(0,50, 0.5))
+```
+
+```{r}
+pcancerdf.wt.reduced <- pcancerdf[pcancerdf$weight < 400,]
+pcancer.cor.wt <- cor(pcancerdf.wt.reduced[,2:9])
+cordf <- data.frame(pcancer.cor[3,],pcancer.cor.wt[3,],pcancer.cor.wt[3,] - pcancer.cor[3,])
+colnames(cordf) <-  c("cor","reduced cor", "improvement")
+knitr::kable(cordf)
+hist(pcancerdf$weight, breaks = seq(0,500, 2))
+```
+
+```{r}
+pcancer.cor[4,]
+hist(pcancerdf$age, breaks = seq(35,80, 1))
+```
+```{r}
+pcancer.cor[5,]
+hist(pcancerdf$hyperplasia, breaks = seq(0,12, 0.2))
+```
+
+```{r}
+pcancer.cor[6,]
+hist(pcancerdf$seminal, breaks = seq(0,1, .1))
+```
+
+```{r}
+pcancer.cor[7,]
+hist(pcancerdf$capsular, breaks = seq(0,20, 0.3))
+```
+
+```{r}
+pcancer.cor[8,]
+hist(pcancerdf$score, breaks = seq(5,8,0.1))
+```
+
