@@ -1,0 +1,145 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r message=FALSE}
+
+library(readxl)
+pcancerdf <- read_xlsx("../823data/pcancer.xlsx")
+#change score and seminal to factors
+#the levels keep the default names for now...
+pcancerdf$score <- factor(pcancerdf$score)
+pcancerdf$seminal <- factor(pcancerdf$seminal)
+```
+
+```{r}
+str(pcancerdf)
+```
+
+
+```{r}
+print("factor levels for score")
+levels(pcancerdf$score)
+print("factor levels for seminal")
+levels(pcancerdf$seminal)
+```
+
+```{r}
+par(mfrow = c(2,4))
+for(i in c(2,3,4,5,6,8)){ #7 and 9 are now factors - so skip
+  stripchart(pcancerdf[,i], main = names(pcancerdf[i]),
+             vertical = TRUE,method = "jitter")
+}
+
+```
+
+```{r}
+#library(epiDisplay)
+#library(car)
+#summ(pcancerdf)
+summary(pcancerdf)
+```
+
+
+```{r}
+library(leaps)
+regsubsets.model <- regsubsets(psa ~ cancerv + weight + age + hyperplasia + capsular ,data = pcancerdf)
+
+regsubsets.model.summ <- summary(regsubsets.model)
+regsubsets.model.summ
+print("adjusted $R^{2}$")
+regsubsets.model.summ$adjr2
+print("cp")
+regsubsets.model.summ$cp
+print("bic")
+regsubsets.model.summ$bic
+```
+
+
+Look at cancerv and capsular together
+```{r message=FALSE}
+lm.psa.1 <- lm(data = pcancerdf, formula = psa ~ cancerv  + capsular)
+summary(lm.psa.1)
+#plot(psa ~ cancerv  + capsular, data = pcancerdf)
+```
+cancerv and capsular are both significant.  
+
+
+look at seminal, cancerv
+```{r}
+lm.psa.2 <- lm(data = pcancerdf, formula = psa ~ seminal  + cancerv)
+summary(lm.psa.2)
+#plot(psa ~ seminal + cancerv, data = pcancerdf)
+```
+seminal and cancerv are both statistically significant in this regression
+
+look at seminal alone and try regression again
+```{r}
+lm.psa.2 <- lm(data = pcancerdf, formula = psa ~ seminal)
+summary(lm.psa.2)
+```
+
+seminal alone is statistically significant
+
+Look at seminal and score
+```{r}
+summary(lm(data = pcancerdf, formula = psa ~ seminal + score))
+```
+not all factors are statistically significant
+
+```{r}
+qqnorm(residuals(lm.psa.1))
+```
+The residuals for cancerv and capsular do not look normally distributed
+```{r}
+qqnorm(residuals(lm.psa.2))
+```
+the residuals for seminal doe not look normally distributed
+
+```{r}
+pcancerdf[pcancerdf$capsular == 0,]
+pcancerdf[pcancerdf$weight > 100,]
+pcancerdf[pcancerdf$hyperplasia == 0,]
+```
+
+
+creating new columns with 0's removed and a new data frame with the highest weights removed 
+```{r}
+pcancerdf$hyperplasia.na <- sapply(pcancerdf$hyperplasia,function(x){if (x == 0){return (NA)} else {return (x)}})
+pcancerdf$capsular.na <- sapply(pcancerdf$capsular,function(x){if (x == 0){return (NA)} else {return (x)}})
+pcancerdf.100 <- pcancerdf[pcancerdf$weight < 100,]
+```
+
+
+Check the coefficients for cancerv and capsular with capsular 0's replaced with na
+```{r}
+lm.psa.1.1 <- lm(data = pcancerdf, formula = psa ~ cancerv  + capsular.na)
+print("coefficients for cancerv and capsular - zeros replaced")
+round(summary(lm.psa.1.1)$coefficient,5)
+print("coefficients for cancerv and capsular - raw data")
+round(summary(lm.psa.1)$coefficient,5)
+```
+
+
+check hyperplasia again to see if the attribute is more useful with zeros removed
+```{r}
+lm.psa.3 <- lm(data = pcancerdf, formula = psa ~ hyperplasia)
+lm.psa.3.1 <- lm(data = pcancerdf, formula = psa ~ hyperplasia.na)
+print("coefficients for seminal - zeros replaced")
+round(summary(lm.psa.3.1)$coefficient,5)
+print("coefficients for seminal - raw data")
+round(summary(lm.psa.3)$coefficient,5)
+```
+
+
+```{r}
+lm.psa.3 <- lm(data = pcancerdf, formula = psa ~ weight)
+lm.psa.3.1 <- lm(data = pcancerdf.100, formula = psa ~ weight)
+print("coefficients for weight  - weight > 100 removed")
+round(summary(lm.psa.3.1)$coefficient,5)
+print("coefficients for weight  - original data")
+round(summary(lm.psa.3)$coefficient,5)
+```
+
